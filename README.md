@@ -78,3 +78,5 @@ GET /api/history-search?action=status|workspaces|reindex
 ## License
 
 MIT
+
+维护须知（改文件、跳转算法、DOM 锚点、失败排障）见 [docs/MAINTENANCE.md](docs/MAINTENANCE.md)。
