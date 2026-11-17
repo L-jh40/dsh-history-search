@@ -69,6 +69,21 @@ node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))" && echo 
 
 **定位到「词」而不是行**：对命中行做 `TreeWalker` 逐字索引（跳过空白、`display:none`、`visibility:hidden`、`aria-hidden`），把匹配串映射回具体文本节点，构造 `Range`，再用 Range 的矩形算 `scrollTop`，最后在 Range 上覆盖一个 2 秒的黄色浮层（不改 React DOM）。
 
+### ★ 展开只能发生在「命中的那一行」内部
+
+早期有两个版本都在"按轮次跨行点开折叠卡"：
+
+1. `[aria-expanded="false"]` 通配 → 把 composer 里被别的插件藏起来的官方用量 pill 全点开；
+2. 限定到 `[data-chat-anchor-key][data-chat-turn]` 但仍**跨行** → 点开整列工具卡（每个工具结果都是一张可折叠的卡），而且没点中真正那张。
+
+现在的做法是 `expandRowOnce(row)`：**只对已经按文本命中的那一行**点开关，最多 3 个，并排除 composer 的两个 slot。一行只尝试一次（`expandedRows` 集合去重）。
+
+配套：索引给 `docs` 加了 `tool` 列（`tool-call` 取 `data.name`，`tool-result` 按 `message.toolCallId` 反查工具名），搜索结果带 `tool`，跳转时优先只看含该工具名的卡片——因为工具结果的正文默认折叠，行文本里往往只剩工具名。
+
+### ★ 扫描时关掉平滑滚动
+
+正文容器若带 `scroll-behavior: smooth`，连续设置 `scrollTop` 会变成"快速滑动 + 在顶部抖动"。扫描与落点前临时 `style.scrollBehavior = 'auto'`，结束后还原。
+
 ### 为什么偶尔只落到「消息」而不是「词」
 
 - markdown 改写了文本（`**`、反引号、链接、表格），原文与 DOM 文本不一致 → 已用「命中点前后 24 字 + 3 段 14 字切片」多档 needle 兜底；
