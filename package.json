@@ -1,0 +1,29 @@
+{
+  "name": "dsh-history-search",
+  "version": "0.1.0",
+  "description": "本地会话历史全文检索：给 DSH 加一个 Ctrl+Shift+F 式的查找面板，可搜提问/回答/思考/工具调用与工具结果，支持忽略大小写、忽略空格、忽略标点，并限定到当前会话；命中直接跳回对应会话。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**/*.js",
+    "cordis.patch.yml"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ]
+    }
+  }
+}

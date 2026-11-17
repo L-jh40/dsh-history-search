@@ -1,0 +1,5 @@
+# dsh-history-search bundle patch: one host row (index + HTTP routes) whose
+# `dsh.client` bundle draws the search panel.
+- insert:
+    - id: history-search
+      name: 'dsh-history-search'

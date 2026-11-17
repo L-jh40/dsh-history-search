@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-history-search 界面预览</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; height: 100vh; overflow: hidden;
+    background: #15171a;
+    font: 13px/1.5 system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    color: #e6e6e6;
+  }
+  /* 背后的 app 底色（示意） */
+  .backdrop { position: absolute; inset: 0; background:
+      radial-gradient(900px 420px at 18% 12%, #1e2228 0%, transparent 60%),
+      radial-gradient(700px 380px at 85% 85%, #1b1f26 0%, transparent 62%), #14161a; }
+  .fake-col { position: absolute; left: 0; top: 0; bottom: 0; width: 240px; border-right: 1px solid #23262b; background: #17191d; }
+  .fake-line { height: 9px; border-radius: 5px; background: #23262b; margin: 14px 16px; }
+  .fake-line.sm { width: 60%; }
+  .fake-chat { position: absolute; left: 260px; right: 600px; top: 40px; }
+  .fake-bubble { height: 34px; border-radius: 10px; background: #1d2025; margin: 12px 0; }
+  .fake-bubble.short { width: 55%; }
+  .fake-bubble.big { height: 120px; }
+
+  .wrap { position: absolute; right: 24px; top: 26px; }
+  .panel {
+    width: 560px; display: flex; flex-direction: column; max-height: 620px;
+    background: #1e1f22; color: #e6e6e6;
+    border: 1px solid rgba(127,127,127,.45); border-radius: 12px;
+    box-shadow: 0 18px 48px rgba(0,0,0,.45); overflow: hidden;
+  }
+  .head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid rgba(127,127,127,.25); cursor: move; user-select: none; }
+  .title { font-weight: 600; flex: none; }
+  .input { flex: 1; min-width: 0; padding: 6px 9px; border-radius: 8px; border: 1px solid rgba(127,127,127,.5); background: #17181b; color: #e6e6e6; font: inherit; outline: none; }
+  .close { border: none; background: transparent; color: inherit; cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; padding: 7px 10px; border-bottom: 1px solid rgba(127,127,127,.2); color: #9aa0a6; }
+  .label { display: inline-flex; align-items: center; gap: 4px; color: #e6e6e6; }
+  .select { padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(127,127,127,.5); background: #17181b; color: #e6e6e6; font: inherit; }
+  .list { overflow: hidden; padding: 5px; }
+  .item { display: block; width: 100%; text-align: left; border: none; background: transparent; color: inherit; padding: 6px 8px; border-radius: 8px; font: inherit; }
+  .item.on { background: rgba(127,127,127,.14); }
+  .meta { display: flex; gap: 7px; align-items: center; font-size: 11px; color: #9aa0a6; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .badge { font-size: 10px; padding: 1px 6px; border-radius: 999px; color: #fff; flex: none; }
+  .b-user { background: #4c8dff; } .b-answer { background: #2fb67c; } .b-think { background: #b07cff; } .b-tool { background: #e8a33d; }
+  .snip { white-space: pre-wrap; word-break: break-word; }
+  mark { background: rgba(46,182,124,.42); color: inherit; border-radius: 3px; padding: 0 1px; }
+  .foot { padding: 5px 10px; border-top: 1px solid rgba(127,127,127,.2); font-size: 11px; color: #9aa0a6; }
+
+  .preview {
+    position: absolute; right: 100%; top: 0; margin-right: 8px; width: 420px; max-height: 620px; overflow: auto;
+    background: #1e1f22; color: #e6e6e6; border: 1px solid rgba(127,127,127,.45); border-radius: 12px;
+    box-shadow: 0 18px 48px rgba(0,0,0,.35); padding: 10px 12px;
+    font: 12px/1.6 ui-monospace, Consolas, "Microsoft YaHei", monospace; white-space: pre-wrap; word-break: break-word;
+  }
+  .phead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; padding-bottom: 5px;
+    border-bottom: 1px solid rgba(127,127,127,.25); font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 11px; color: #9aa0a6; }
+</style>
+</head>
+<body>
+<div class="backdrop"></div>
+<div class="fake-col">
+  <div class="fake-line" style="width:40%"></div>
+  <div class="fake-line"></div><div class="fake-line"></div><div class="fake-line sm"></div>
+  <div class="fake-line"></div><div class="fake-line sm"></div><div class="fake-line"></div>
+</div>
+<div class="fake-chat">
+  <div class="fake-bubble short"></div>
+  <div class="fake-bubble big"></div>
+  <div class="fake-bubble"></div>
+  <div class="fake-bubble short"></div>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="head">
+      <span class="title">搜索历史</span>
+      <input class="input" value="github token" readonly>
+      <button class="close">×</button>
+    </div>
+    <div class="bar">
+      <label class="label"><input type="checkbox" checked> 正则</label>
+      <span style="border:1px solid rgba(127,127,127,.5);border-radius:999px;width:17px;height:17px;line-height:15px;text-align:center;font-size:11px">?</span>
+      <label class="label" style="opacity:.45"><input type="checkbox" disabled> 忽略大小写</label>
+      <label class="label" style="opacity:.45"><input type="checkbox" disabled> 忽略空格</label>
+      <label class="label" style="opacity:.45"><input type="checkbox" disabled> 忽略标点</label>
+      <label class="label"><input type="checkbox" checked> 悬停预览</label>
+    </div>
+    <div class="bar">
+      <select class="select"><option>全部会话</option></select>
+      <select class="select"><option>全部类型</option></select>
+    </div>
+    <div class="list">
+      <div class="item on">
+        <div class="meta"><span class="badge b-answer">回答</span><span style="font-weight:600;color:#e6e6e6">插件发布与文档</span><span>· 工作区域</span><span>第 6 轮</span><span>2026/11/17 23:04:11</span></div>
+        <div class="snip">…安装说明里补一行：<mark>github token</mark> 只放在本地文件里，别写进 README…</div>
+      </div>
+      <div class="item">
+        <div class="meta"><span class="badge b-think">思考</span><span style="font-weight:600;color:#e6e6e6">搜索插件设计</span><span>· 工作区域</span><span>第 4 轮</span><span>2026/11/17 22:58:02</span></div>
+        <div class="snip">…先确认 trigram 索引可用，再测 <mark>github</mark> 与 <mark>token</mark> 之间隔字的情况…</div>
+      </div>
+      <div class="item">
+        <div class="meta"><span class="badge b-tool">工具调用</span><span style="font-weight:600;color:#e6e6e6">搜索插件设计</span><span>· 工作区域</span><span>第 4 轮</span><span>2026/11/17 22:57:35</span></div>
+        <div class="snip">grep -n "github.{0,6}token" docs/*.md<mark></mark></div>
+      </div>
+      <div class="item">
+        <div class="meta"><span class="badge b-user">提问</span><span style="font-weight:600;color:#e6e6e6">插件发布与文档</span><span>· 工作区域</span><span>第 5 轮</span><span>2026/11/17 23:01:09</span></div>
+        <div class="snip">…能不能按 <mark>github token</mark> 这种不确定写法搜索…</div>
+      </div>
+    </div>
+    <div class="foot">4 条 · 9.4 ms · 索引 就绪 · 拖动标题栏可移动 · 点结果跳转</div>
+  </div>
+
+  <div class="preview">
+    <div class="phead"><span>回答 · 插件发布与文档</span><span>×</span></div>安装说明里补一行：github token 只放在本地文件里，别写进 README；示例截图用示例数据渲染，避免把真实历史带进仓库。
+
+发布前再跑一遍冒烟测试：
+1. 普通模式搜 "trigram"，应在 10ms 内返回；
+2. 正则模式搜 github.{0,6}token，命中上面这条；
+3. 按工作区筛选，只剩「工作区域」的会话。</div>
+</div>
+</body>
+</html>
