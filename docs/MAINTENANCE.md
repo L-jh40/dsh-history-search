@@ -84,6 +84,25 @@ node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))" && echo 
 
 正文容器若带 `scroll-behavior: smooth`，连续设置 `scrollTop` 会变成"快速滑动 + 在顶部抖动"。扫描与落点前临时 `style.scrollBehavior = 'auto'`，结束后还原。
 
+### ★ 先「就地展开」，最后才滚动
+
+工具结果的正文默认折叠，行文本里只剩工具名——所以"按文本找行"永远找不到，旧实现只能反复滚动直到超时（用户看到的就是"快速反复滚动但打不开工具卡"）。
+
+现在的顺序（`jumpTo`）：
+
+1. 当前 DOM 里按 `hit.turn` + `hit.tool` 找**该轮的工具卡行**；
+2. 就地 `expandRowOnce(row)` 展开，展开后再在该行内找 Range；
+3. 找不到就停在那一轮（`scrollTop` 一次，黄框闪一下）并提示"正文在折叠卡里"；
+4. **只有目标行根本不在 DOM** 时才做有界滚动（上行 12 屏、下行 12 屏，不做展开）。
+
+### ★ 结果列表渐进渲染
+
+`hits` 可能几百条，一次性 `map` 会卡住主线程。现在 `store.visible` 从 24 起，列表滚到底部再 +40；新结果到达时重置为 24。页脚显示「已显示 N，滚到底继续加载」。
+
+### ★ 类型「询问」（ask）
+
+`ask_user_question` 的 `tool/call` 不再进 `tool-call`，而是单独成 `ask` 文档：问题 + 选项（`askText()` 解析 arguments JSON）。用户对询问的回答仍然是普通 `user/message`，两类一起用就能按"问过什么 / 怎么答的"检索。
+
 ### 为什么偶尔只落到「消息」而不是「词」
 
 - markdown 改写了文本（`**`、反引号、链接、表格），原文与 DOM 文本不一致 → 已用「命中点前后 24 字 + 3 段 14 字切片」多档 needle 兜底；
