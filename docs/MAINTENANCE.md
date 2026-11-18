@@ -103,6 +103,14 @@ node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))" && echo 
 
 `ask_user_question` 的 `tool/call` 不再进 `tool-call`，而是单独成 `ask` 文档：问题 + 选项（`askText()` 解析 arguments JSON）。用户对询问的回答仍然是普通 `user/message`，两类一起用就能按"问过什么 / 怎么答的"检索。
 
+### ★ 折叠头不是 ARIA 控件（对着 chat-demo 源码确认）
+
+`deepseek-ai/chat-demo` 的 `AssistantMessage.tsx` 里，思考/摘要头是**普通 div + onClick**，没有 `aria-expanded`。所以只找 `button[aria-expanded=false]` 会"一个都点不开"。现在的展开顺序：ARIA 控件 → `<summary>` → 按「工具名 / 查看 / 展开」文字找可点祖先（限行内、最多 3 个）。
+
+### ★ 失败现场诊断
+
+跳转失败时客户端会 `POST /api/history-search?action=diagnose` 把现场（该轮行的属性、可点控件清单、outerHTML 片段）发到宿主，宿主追加写入 `%USERPROFILE%\.dsh\history-search\diagnose.log`。排查真实 DOM 先看这个文件，不要靠猜。
+
 ### 为什么偶尔只落到「消息」而不是「词」
 
 - markdown 改写了文本（`**`、反引号、链接、表格），原文与 DOM 文本不一致 → 已用「命中点前后 24 字 + 3 段 14 字切片」多档 needle 兜底；
