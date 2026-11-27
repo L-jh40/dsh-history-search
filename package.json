@@ -1,6 +1,6 @@
 {
   "name": "dsh-history-search",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "本地会话历史全文检索：给 DSH 加一个 Ctrl+Shift+F 式的查找面板，可搜提问/回答/思考/工具调用与工具结果，支持正则、忽略大小写/空格/标点，并限定到工作区或当前会话；命中定位到词并跳回对应会话。",
   "type": "module",
   "main": "lib/index.js",

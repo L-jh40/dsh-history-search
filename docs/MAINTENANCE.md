@@ -111,6 +111,28 @@ node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))" && echo 
 
 跳转失败时客户端会 `POST /api/history-search?action=diagnose` 把现场（该轮行的属性、可点控件清单、outerHTML 片段）发到宿主，宿主追加写入 `%USERPROFILE%\.dsh\history-search\diagnose.log`。排查真实 DOM 先看这个文件，不要靠猜。
 
+### ★ 排序：候选必须先按时间取，再排序
+
+曾经写成 `... WHERE MATCH ? LIMIT 500`，然后在 JS 里按时间 sort。**MATCH 的 500 条是任意序**（FTS 的 rank/rowid），不是最新的 500 条——搜常见字（"你"）时顶部全是旧日期，本会话最近的内容压根没进候选。
+
+现在两条 SQL 都带 `ORDER BY d.time DESC LIMIT 500`，再在 JS 里做精确后筛与排序。常见字的结果顺序才和"最近"一致。
+
+### ★ 子类型：ask / ask-result / search-result
+
+- `ask`：`tool/call` 且 `name === 'ask_user_question'`，文本是问题 + 选项；
+- `ask-result`：对应那条 `tool/result`（用户回答的内容）；
+- `search-result`：`tool/result` 且工具名匹配 `/search|fetch|web|anysearch|browse|crawl|scrape|extract/i`。
+
+客户端里勾「工具调用」默认带 `ask`，勾「工具结果」默认带 `ask-result` + `search-result`，可单独取消。
+
+### ★ 标点：中英文一起忽略
+
+`PUNCT` 除了 `\p{P}\p{S}`，显式并上全角标点集合（，。！？；：、·…—～【】《》「」『』（）“”‘’），避免个别全角符号没被 `\p{P}` 覆盖。
+
+### ★ 增量：按 step 结束就更新
+
+原来只在 `turn/end` 触发；现在 `step/end`、`turn/end`、`session/title` 都触发，1.5s 防抖重建该会话——一轮跑很久时也能搜到中途的内容。
+
 ### 为什么偶尔只落到「消息」而不是「词」
 
 - markdown 改写了文本（`**`、反引号、链接、表格），原文与 DOM 文本不一致 → 已用「命中点前后 24 字 + 3 段 14 字切片」多档 needle 兜底；
