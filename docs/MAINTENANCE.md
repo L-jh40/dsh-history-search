@@ -133,6 +133,31 @@ node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))" && echo 
 
 原来只在 `turn/end` 触发；现在 `step/end`、`turn/end`、`session/title` 都触发，1.5s 防抖重建该会话——一轮跑很久时也能搜到中途的内容。
 
+### ★ 用「骨架」比较，而不是去 markdown
+
+原文里有 `**加粗**`、`` `code` ``、`## 标题`，渲染后这些符号**消失**。早期只是把 needle 里空白压掉，于是带 markdown 的 needle 永远匹配不到→落到"展开整轮"的兜底→看起来像跳到了最上面的思考。
+
+现在的做法：needle 和 DOM 文本都过一遍 `skeleton()`——**只保留字母/数字/汉字**（`/[\p{L}\p{N}]/u`）。markdown、中英文标点、空白全部消失，两边一致；映射回 DOM 时用字符索引里的 `where` 数组（每个保留字符对应原文本节点+偏移），Range 依然精确。
+
+### ★ 折叠步骤要按「行」展开，不能按文本找
+
+DOM 实测（diagnose.log）：
+
+```
+<div data-chat-flow-kind="turn-process" data-chat-turn="16">
+  <button aria-expanded="false">已完成，用时 4分50秒</button>
+</div>
+<div data-chat-flow-kind="reasoning">…<div aria-expanded="false">思考…</div></div>
+<div data-chat-flow-kind="tool-call">…<div aria-expanded="false">运行命令…</div></div>
+```
+
+折叠时这些行的 `innerText` 只有标题（甚至为空），**按文本命中永远为假**。所以顺序是：
+
+1. 先按文本扫（回答/提问通常可见）；
+2. 没命中就展开该轮的 `turn-process` 卡片；
+3. 还没命中就**逐行点该轮内** `[aria-expanded="false"]` 的步骤头（最多 10 个），每点一个重扫一次；
+4. 全程失败才落兜底（优先落 `turn-process` 卡片，而不是该轮第一行）。
+
 ### 为什么偶尔只落到「消息」而不是「词」
 
 - markdown 改写了文本（`**`、反引号、链接、表格），原文与 DOM 文本不一致 → 已用「命中点前后 24 字 + 3 段 14 字切片」多档 needle 兜底；
