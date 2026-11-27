@@ -141,22 +141,28 @@ node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))" && echo 
 
 ### ★ 折叠步骤要按「行」展开，不能按文本找
 
-DOM 实测（diagnose.log）：
+DOM 实测（diagnose.log，2026-11-28）：
 
-```
+```html
+<!-- 第一层：整轮工作过程 -->
 <div data-chat-flow-kind="turn-process" data-chat-turn="16">
   <button aria-expanded="false">已完成，用时 4分50秒</button>
 </div>
-<div data-chat-flow-kind="reasoning">…<div aria-expanded="false">思考…</div></div>
-<div data-chat-flow-kind="tool-call">…<div aria-expanded="false">运行命令…</div></div>
+
+<!-- 第二层：工作过程组（默认 hidden=until-found，所以 innerText 为 0） -->
+<div data-step-process="true" data-chat-turn="16" hidden="until-found">
+  <button aria-expanded="false">执行了命令，修改了文件，已读取文件等</button>
+  <div data-step-process-body="true" hidden="until-found">
+    <div data-chat-flow-kind="reasoning">…<div data-disclosure-row="true" role="button" aria-expanded="false">思考…</div></div>
+    <div data-chat-flow-kind="tool-call">…<div data-disclosure-row="true" role="button" aria-expanded="false">运行命令…</div></div>
+  </div>
+</div>
 ```
 
-折叠时这些行的 `innerText` 只有标题（甚至为空），**按文本命中永远为假**。所以顺序是：
-
-1. 先按文本扫（回答/提问通常可见）；
-2. 没命中就展开该轮的 `turn-process` 卡片；
-3. 还没命中就**逐行点该轮内** `[aria-expanded="false"]` 的步骤头（最多 10 个），每点一个重扫一次；
-4. 全程失败才落兜底（优先落 `turn-process` 卡片，而不是该轮第一行）。
+要点：
+- 步骤行是 `hidden="until-found"`，`innerText` 为空 → **按文本匹配永远为假**；
+- 折叠判断不能用 computed `display`（祖先 display:none 时子元素仍报 block），要用 `parent.getClientRects().length === 0`；
+- 展开顺序：`turn-process` 按钮 → `[data-step-process]` 组头按钮 → 每个步骤的 `[data-disclosure-row][aria-expanded=false]`，每点一次重扫一次。
 
 ### 为什么偶尔只落到「消息」而不是「词」
 
